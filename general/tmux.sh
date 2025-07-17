@@ -2,7 +2,7 @@
 
 git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
-echo "source ~/repositories/dotfiles/dotfiles/.tmux.conf" > ~/.tmux.conf
+echo "source ~/repositories/manzanit0/dotfiles/dotfiles/.tmux.conf" > ~/.tmux.conf
 
 if [[ "$(uname)" == "Linux" ]]; then
     apt install -y tmux
