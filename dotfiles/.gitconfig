@@ -1,35 +1,73 @@
-[user]
-  email = unico.javier@gmail.com
-  name = Manzanit0
+# This is for delta
 [core]
-  excludesfile = ~/.gitignore_global
-	pager = diff-so-fancy | less --tabs=4 -RFX
+    pager = delta
+
+[interactive]
+    diffFilter = delta --color-only
+
+[delta]
+    navigate = true  # use n and N to move between diff sections
+    dark = true      # or light = true, or omit for auto-detection
+
+[merge]
+    conflictstyle = zdiff3
+# This ends delta
+
+
+
+[user]
+email = unico.javier@gmail.com
+name = Javier García
+signingkey = A3F00A1ECACECE0C
+[core]
+	excludesFile = ~/.gitignore-global
+  ; pager = diff-so-fancy | less --tabs=4 -RFX
 [alias]
-  branch-name = rev-parse --abbrev-ref HEAD
-  tug = !git pull origin $(git branch-name)
-  nuke = reset --hard HEAD
-  amend = commit -a --amend
-  ca = commit -a
-  shove = push -u origin HEAD
-  delete-merged-branches = ! git branch --merged master | grep -v \"\\* master\" | xargs -n 1 git branch -d
-  visual = log --oneline --decorate --graph --all
-  recent = branch --sort=-committerdate 
-  recents = for-each-ref --sort=committerdate refs/heads/ --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(color:red)%(objectname:short)%(color:reset) - %(contents:subject) - %(authorname) (%(color:green)%(committerdate:relative)%(color:reset))'
-	recommit = commit --amend --no-edit
-	cleanup = "!git branch --format=\"%(if:notequals=*)%(HEAD)%(then)%(if:notequals=${1:-master})%(refname:lstrip=2)%(then)%(refname:lstrip=2)%(end)%(end)\" --merged master | xargs -rpxL1 git branch -d"
+s = status --short
+default-branch = "!git remote show origin | sed -n '/HEAD branch/s/.*: //p'"
+bump = "!git pull --rebase origin $(git default-branch)"
+branch-name = rev-parse --abbrev-ref HEAD
+tug = !git pull origin $(git branch-name)
+nuke = "!git reset --hard HEAD && git clean -df"
+amend = commit -a --amend
+ca = commit -a
+shove = push -u origin HEAD
+push = push --force-with-lease
+delete-merged-branches = ! git branch --merged master | grep -v \"\\* master\" | xargs -n 1 git branch -d
+visual = log --oneline --decorate --graph --all
+recent = branch --sort=-committerdate
+recents = for-each-ref --sort=committerdate refs/heads/ --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(color:red)%(objectname:short)%(color:reset) - %(contents:subject) - %(authorname) (%(color:green)%(committerdate:relative)%(color:reset))'
+recommit = commit --amend --no-edit
+cleanup = "!git branch --format=\"%(if:notequals=*)%(HEAD)%(then)%(if:notequals=${1:-master})%(refname:lstrip=2)%(then)%(refname:lstrip=2)%(end)%(end)\" --merged master | xargs -rpxL1 git branch -d"
+lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --
+root = rev-parse --show-toplevel
+ci = "!git commit --allow-empty -m \"Trigger Build\" && git push"
+wk-body = log origin..HEAD --format='* %s%n%b'
 [push]
-  default = simple
+default = simple
 [color]
-	ui = true
+ui = true
 [color "diff-highlight"]
-	oldNormal = red bold
-	oldHighlight = red bold 52
-	newNormal = green bold
-	newHighlight = green bold 22
+oldNormal = red bold
+oldHighlight = red bold 52
+newNormal = green bold
+newHighlight = green bold 22
 [color "diff"]
-	meta = 11
-	frag = magenta bold
-	commit = yellow bold
-	old = red bold
-	new = green bold
-	whitespace = red reverse
+meta = 11
+frag = magenta bold
+commit = yellow bold
+old = red bold
+new = green bold
+whitespace = red reverse
+[url "ssh://git@github.com/"]
+insteadOf = https://github.com/
+[filter "lfs"]
+clean = git-lfs clean -- %f
+smudge = git-lfs smudge -- %f
+process = git-lfs filter-process
+required = true
+[safe]
+	directory = /private/var/folders/2c/qvljt5md5x7_qhdvsrvxv8cm0000gn/T/get-action-tests3367319973
+	directory = /private/var/folders/2c/qvljt5md5x7_qhdvsrvxv8cm0000gn/T/get-action-tests3367319973
+	directory = /private/var/folders/2c/qvljt5md5x7_qhdvsrvxv8cm0000gn/T/get-action-tests3367319973
+	directory = /private/var/folders/2c/qvljt5md5x7_qhdvsrvxv8cm0000gn/T/get-action-tests3367319973

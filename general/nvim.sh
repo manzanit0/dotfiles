@@ -9,7 +9,7 @@ mv nvim /usr/bin
 
 # Link nvim config
 mkdir -p ~/.config/nvim
-echo "source ~/repositories/dotfiles/dotfiles/.nvimrc" > ~/.config/nvim/init.vim
+ln -s ~/repositories/manzanit0/dotfiles/dotfiles/.config/nvim/init.lua ~/.config/nvim/init.lua
 
 # This is needed for many plugins
 pip3 install neovim --upgrade
