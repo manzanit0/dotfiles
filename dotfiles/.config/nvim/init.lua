@@ -315,9 +315,11 @@ require('lazy').setup({
     },
     config = function()
       local builtin = require('telescope.builtin')
+      local arena = require("arena")
       vim.keymap.set("n", "<leader>ff", builtin.find_files, {})
       vim.keymap.set("n", "<leader>fg", builtin.live_grep, {})
-      vim.keymap.set("n", "<leader>fb", builtin.buffers, {})
+      -- vim.keymap.set("n", "<leader>fb", builtin.buffers, {})
+      vim.keymap.set("n", "<leader>fb", arena.toggle, {})
       vim.keymap.set("n", "<leader>fh", builtin.help_tags, {})
 
       local trouble = require("trouble.sources.telescope")
@@ -631,6 +633,31 @@ require('lazy').setup({
         }
       })
     end
+  },
+  {
+    "greggh/claude-code.nvim",
+    dependencies = {
+      "nvim-lua/plenary.nvim", -- Required for git operations
+    },
+    config = function()
+      require("claude-code").setup()
+    end
+  },
+  {
+    "rest-nvim/rest.nvim",
+    dependencies = {
+      "nvim-treesitter/nvim-treesitter",
+      opts = function(_, opts)
+        opts.ensure_installed = opts.ensure_installed or {}
+        table.insert(opts.ensure_installed, "http")
+      end,
+    }
+  },
+  {
+    "dzfrias/arena.nvim",
+    event = "BufWinEnter",
+    -- Calls `.setup()` automatically
+    config = true,
   },
 })
 
@@ -1025,4 +1052,4 @@ end, {
 })
 
 -- HTTP request plugin
-require('http_request').setup()
+-- require('http_request').setup()
