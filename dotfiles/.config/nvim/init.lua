@@ -183,482 +183,308 @@ vim.o.termguicolors = true
 
 vim.loader.enable()
 
--- [[ Install `lazy.nvim` plugin manager ]]
---    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
-local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
-if not vim.loop.fs_stat(lazypath) then
-  local lazyrepo = 'https://github.com/folke/lazy.nvim.git'
-  vim.fn.system { 'git', 'clone', '--filter=blob:none', '--branch=stable', lazyrepo, lazypath }
-end ---@diagnostic disable-next-line: undefined-field
-vim.opt.rtp:prepend(lazypath)
+vim.pack.add({
+  "https://github.com/tpope/vim-surround",
+  "https://github.com/tpope/vim-unimpaired",
+  "https://github.com/tpope/vim-rhubarb",
+  "https://github.com/yasuhiroki/github-actions-yaml.vim",
+  "https://github.com/onsails/lspkind.nvim",
+  "https://github.com/stevearc/dressing.nvim",
+  "https://github.com/rhysd/conflict-marker.vim",
+  "https://github.com/kosayoda/nvim-lightbulb",
+  "https://github.com/neovim/nvim-lspconfig",
+  "https://github.com/j-hui/fidget.nvim", -- TODO: this isn't working any more since 0.11 lsp migration
+  "https://github.com/projekt0n/github-nvim-theme",
+  "https://github.com/romainl/Apprentice",
+  "https://github.com/ayu-theme/ayu-vim",
+  "https://github.com/Joorem/vim-haproxy",
+  "https://github.com/manzanit0/k8s-whisper.nvim",
+  "https://github.com/mason-org/mason.nvim",
+  -- "https://github.com/kaiuri/nvim-juliana",
+  "https://github.com/vim-test/vim-test",
+  -- "https://github.com/numToStr/Comment.nvim",
+  "https://github.com/s1n7ax/nvim-terminal",
+  "https://github.com/nvim-lua/plenary.nvim",
+  "https://github.com/nvim-tree/nvim-web-devicons", -- not strictly required, but recommended
+  "https://github.com/MunifTanjim/nui.nvim",
+  "https://github.com/3rd/image.nvim", -- Optional image support in preview window: See `# Preview Mode` for more information
+  { src = "https://github.com/nvim-neo-tree/neo-tree.nvim", version = "v3.x" },
+  "https://github.com/nvim-telescope/telescope.nvim",
+  "https://github.com/nvim-telescope/telescope-fzf-native.nvim",
+  "https://github.com/folke/trouble.nvim",
+  "https://github.com/simrat39/symbols-outline.nvim",
+  "https://github.com/tpope/vim-fugitive",
+  "https://github.com/lewis6991/gitsigns.nvim",
+  "https://github.com/ruifm/gitlinker.nvim",
+  "https://github.com/nvim-treesitter/nvim-treesitter",
+  "https://github.com/aznhe21/actions-preview.nvim",
+  "https://github.com/akinsho/flutter-tools.nvim",
+  "https://github.com/natecraddock/workspaces.nvim",
+  "https://github.com/folke/todo-comments.nvim",
+  "https://github.com/quolpr/quicktest.nvim",
+  "https://github.com/tobyshooters/palimpsest",
+  -- "https://github.com/rest-nvim/rest.nvim",
+})
 
-require('lazy').setup({
-  -- {
-  --   'projekt0n/github-nvim-theme',
-  --   lazy = false, -- make sure we load this during startup if it is your main colorscheme
-  --   priority = 1000, -- make sure to load this before all the other start plugins
-  --   config = function()
-  --     require('github-theme').setup({})
-  --     vim.cmd('colorscheme github_dark')
-  --   end,
-  -- },
-  "tpope/vim-surround",
-  "tpope/vim-unimpaired",
-  "tpope/vim-rhubarb",
-  "yasuhiroki/github-actions-yaml.vim",
-  "onsails/lspkind.nvim",
-  "stevearc/dressing.nvim",
-  'rhysd/conflict-marker.vim',
-  'kosayoda/nvim-lightbulb',
-  "neovim/nvim-lspconfig",
-  "j-hui/fidget.nvim", -- TODO: this isn't working any more since 0.11 lsp migration
-  'projekt0n/github-nvim-theme',
-  "romainl/Apprentice",
-  "ayu-theme/ayu-vim",
-  'Joorem/vim-haproxy',
-  {
-    dir = "~/repositories/manzanit0/k8s-whisper.nvim",
-    config = function()
-      require('k8s-whisper').setup({
-        -- This is a GitHub repository
-        schemas_catalog = 'datreeio/CRDs-catalog',
-        -- This is a git ref, branch, tag, sha, etc.
-        schema_catalog_ref = 'main',
-      })
-    end
+-- vim.pack doesn't support build hooks, so we need to manually build telescope-fzf-native
+-- This compilation step is necessary for the FZF sorter to work with native performance
+local fzf_lib = vim.fn.stdpath('data') .. '/site/pack/core/opt/telescope-fzf-native.nvim'
+if vim.fn.isdirectory(fzf_lib) == 1 and vim.fn.filereadable(fzf_lib .. '/build/libfzf.so') == 0 then
+  vim.fn.system('cd ' .. fzf_lib .. ' && make')
+end
+
+-- Plugin configurations
+require('mason').setup()
+-- require('nvim-juliana').setup({})
+-- require('Comment.nvim').setup({})
+
+vim.o.hidden = true -- this is needed to be set to reuse terminal between toggles
+require('nvim-terminal').setup({
+  toggle_keymap = '<C-,>',
+  increase_height_keymap = '<leader>t=',
+  decrease_height_keymap = '<leader>t-',
+  window_height_change_amount = 25,
+})
+
+-- Unless you are still migrating, remove the deprecated commands from v1.x
+vim.cmd([[ let g:neo_tree_remove_legacy_commands = 1 ]])
+
+vim.keymap.set("n", "<leader>o", "<cmd>Neotree focus<cr>", { noremap = true, silent = true })
+vim.keymap.set("n", "<leader>e", "<cmd>Neotree toggle<cr>", { noremap = true, silent = true })
+vim.keymap.set("n", "-", "<cmd>Neotree reveal<cr>", { noremap = true, silent = true })
+vim.keymap.set("n", "\\", "<cmd>Neotree toggle current reveal_force_cwd<cr>",
+  { noremap = true, silent = true })
+
+require("neo-tree").setup({
+  close_if_last_window = true,
+  window = {
+    position = "right",
   },
-  {
-    "mason-org/mason.nvim",
-    config = function()
-      require('mason').setup()
-    end
-  },
-  {
-    'kaiuri/nvim-juliana',
-    opts = {},
-    config = true,
-  },
-  {
-    "vim-test/vim-test",
-    config = function()
-      vim.keymap.set("n", "<leader>te", "<cmd>TestNearest<CR>", { noremap = true, silent = true })
-      vim.keymap.set("n", "<leader>Te", "<cmd>TestFile<CR>", { noremap = true, silent = true })
-    end
-  },
-  {
-    'numToStr/Comment.nvim',
-    opts = {}
-  },
-  {
-    "s1n7ax/nvim-terminal",
-    -- lazy = true,          -- not using much these days
-    config = function()
-      vim.o.hidden = true -- this is needed to be set to reuse terminal between toggles
-      require('nvim-terminal').setup({
-        toggle_keymap = '<C-,>',
-        increase_height_keymap = '<leader>t=',
-        decrease_height_keymap = '<leader>t-',
-        window_height_change_amount = 25,
-      })
-    end
-  },
-  {
-    "nvim-neo-tree/neo-tree.nvim",
-    branch = "v3.x",
-    dependencies = {
-      "nvim-lua/plenary.nvim",
-      "nvim-tree/nvim-web-devicons", -- not strictly required, but recommended
-      "MunifTanjim/nui.nvim",
-      "3rd/image.nvim",              -- Optional image support in preview window: See `# Preview Mode` for more information
+  filesystem = {
+    hijack_netrw_behavior = "open_default",
+    filtered_items = {
+      visible = true,
+      hide_dotfiles = false,
+      hide_gitignored = false,
+      hide_by_name = {
+        ".git",
+      },
     },
-    config = function()
-      -- Unless you are still migrating, remove the deprecated commands from v1.x
-      vim.cmd([[ let g:neo_tree_remove_legacy_commands = 1 ]])
-
-      vim.keymap.set("n", "<leader>o", "<cmd>Neotree focus<cr>", { noremap = true, silent = true })
-      vim.keymap.set("n", "<leader>e", "<cmd>Neotree toggle<cr>", { noremap = true, silent = true })
-      vim.keymap.set("n", "-", "<cmd>Neotree reveal<cr>", { noremap = true, silent = true })
-      vim.keymap.set("n", "\\", "<cmd>Neotree toggle current reveal_force_cwd<cr>",
-        { noremap = true, silent = true })
-
-      require("neo-tree").setup({
-        close_if_last_window = true,
-        window = {
-          position = "right",
-        },
-        filesystem = {
-          hijack_netrw_behavior = "open_default",
-          filtered_items = {
-            visible = true,
-            hide_dotfiles = false,
-            hide_gitignored = false,
-            hide_by_name = {
-              ".git",
-            },
-          },
-          window = {
-            mappings = {
-              ["h"] = "toggle_hidden",
-            }
-          },
-        }
-      })
-    end
-  },
-  {
-    "nvim-telescope/telescope.nvim",
-    lazy = false,
-    dependencies = {
-      'nvim-lua/plenary.nvim',
-      -- don't use this, it's more annoying than anything else.
-      -- 'jonarrien/telescope-cmdline.nvim',
-    },
-    config = function()
-      local builtin = require('telescope.builtin')
-      local arena = require("arena")
-      vim.keymap.set("n", "<leader>ff", builtin.find_files, {})
-      vim.keymap.set("n", "<leader>fg", builtin.live_grep, {})
-      -- vim.keymap.set("n", "<leader>fb", builtin.buffers, {})
-      vim.keymap.set("n", "<leader>fb", arena.toggle, {})
-      vim.keymap.set("n", "<leader>fh", builtin.help_tags, {})
-
-      local trouble = require("trouble.sources.telescope")
-      local telescope = require("telescope")
-      telescope.setup {
-        defaults = {
-          mappings = {
-            i = { ["<c-t>"] = trouble.open },
-            n = { ["<c-t>"] = trouble.open },
-          },
-        },
-        pickers = {
-          find_files = {
-            -- `hidden = true` will still show the inside of `.git/` as it's not `.gitignore`d.
-            find_command = { "rg", "--files", "--hidden", "--glob", "!**/.git/*" },
-          },
-        },
-        extensions = {
-          fzf = {
-            fuzzy = true,                   -- false will only do exact matching
-            override_generic_sorter = true, -- override the generic sorter
-            override_file_sorter = true,    -- override the file sorter
-            case_mode = "smart_case",       -- or "ignore_case" or "respect_case"
-            -- the default case_mode is "smart_case"
-          }
-        }
+    window = {
+      mappings = {
+        ["h"] = "toggle_hidden",
       }
+    },
+  }
+})
 
-      -- require('telescope').load_extension('fzf')
-    end
-  },
-  { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' },
-  {
-    "folke/trouble.nvim",
-    opts = {},
-    cmd = "Trouble",
-    keys = {
-      {
-        "<leader>xx",
-        "<cmd>Trouble diagnostics toggle<cr>",
-        desc = "Diagnostics (Trouble)",
-      },
-      {
-        "<leader>xX",
-        "<cmd>Trouble diagnostics toggle filter.buf=0<cr>",
-        desc = "Buffer Diagnostics (Trouble)",
-      },
-      {
-        "<leader>cs",
-        "<cmd>Trouble symbols toggle focus=false<cr>",
-        desc = "Symbols (Trouble)",
-      },
-      {
-        "<leader>cl",
-        "<cmd>Trouble lsp toggle focus=false win.position=right<cr>",
-        desc = "LSP Definitions / references / ... (Trouble)",
-      },
-      {
-        "<leader>xL",
-        "<cmd>Trouble loclist toggle<cr>",
-        desc = "Location List (Trouble)",
-      },
-      {
-        "<leader>xQ",
-        "<cmd>Trouble qflist toggle<cr>",
-        desc = "Quickfix List (Trouble)",
-      },
+local builtin = require('telescope.builtin')
+vim.keymap.set("n", "<leader>ff", builtin.find_files, {})
+vim.keymap.set("n", "<leader>fg", builtin.live_grep, {})
+vim.keymap.set("n", "<leader>fb", builtin.buffers, {})
+vim.keymap.set("n", "<leader>fh", builtin.help_tags, {})
+
+local trouble = require("trouble.sources.telescope")
+local telescope = require("telescope")
+telescope.setup {
+  defaults = {
+    mappings = {
+      i = { ["<c-t>"] = trouble.open },
+      n = { ["<c-t>"] = trouble.open },
     },
   },
-  {
-    "simrat39/symbols-outline.nvim",
-    opts = {},
-    config = function()
-      vim.keymap.set("n", "<leader>m", "<cmd>SymbolsOutline<cr>", { noremap = true, silent = true })
-    end
-  },
-  {
-    "tpope/vim-fugitive",
-    config = function()
-      vim.keymap.set("n", "<Leader>gs", "<cmd>Git<cr>", { noremap = true, silent = true })
-      vim.keymap.set("n", "<leader>gpu", "<cmd>Git push<cr>", { desc = "Git push" })
-    end
-  },
-  {
-    "lewis6991/gitsigns.nvim",
-    config = function()
-      require('gitsigns').setup()
-    end
-  },
-  {
-    'ruifm/gitlinker.nvim',
-    dependencies = { 'nvim-lua/plenary.nvim' },
-    config = function()
-      local gitlinker = require("gitlinker")
-      gitlinker.setup({ mappings = nil })
-
-      vim.keymap.set("n", "<leader>gb", "", {
-        silent = true,
-        desc = "browse repo in browser",
-        callback = function()
-          gitlinker.get_repo_url({
-            action_callback = gitlinker.actions.open_in_browser
-          })
-        end
-      })
-
-      vim.keymap.set({ "n", "v" }, "<leader>gl", "", {
-        silent = true,
-        desc = "get git permlink",
-        callback = function()
-          local mode = string.lower(vim.fn.mode())
-          gitlinker.get_buf_range_url(mode)
-        end,
-      })
-    end
-  },
-  {
-    "nvim-treesitter/nvim-treesitter",
-    build = ":TSUpdate",
-    config = function(_, opts)
-      -- Prefer git instead of curl in order to improve connectivity in some environments
-      -- require('nvim-treesitter.install').prefer_git = true
-
-      require("nvim-treesitter.configs").setup({
-        ensure_installed = {
-          'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'vim', 'vimdoc',
-          "proto",
-          "lua",
-          "bash",
-          "yaml", "json",
-          "go", "gomod", "gowork",
-          "dockerfile", "hcl", "terraform",
-          "gotmpl", "helm",
-          "elixir",
-          "starlark",
-          "javascript", "typescript"
-        },
-        -- auto_install = true,
-        sync_install = false,
-        highlight = { enable = true },
-        indent = { enable = true },
-      })
-
-      vim.treesitter.language.register("starlark", "tiltfile")
-
-      vim.filetype.add({
-        extension = {
-          gotmpl = 'gotmpl',
-        },
-        pattern = {
-          [".*/templates/.*%.tpl"] = "helm",
-          [".*/templates/.*%.ya?ml"] = "helm",
-          ["helmfile.*%.ya?ml"] = "helm",
-        },
-      })
-    end,
-  },
-  {
-    "aznhe21/actions-preview.nvim",
-    config = function()
-      vim.keymap.set({ "v", "n" }, "gf", require("actions-preview").code_actions)
-    end,
-  },
-  {
-    'akinsho/flutter-tools.nvim',
-    opts = {},
-    dependencies = {
-      'nvim-lua/plenary.nvim',
-      'stevearc/dressing.nvim', -- optional for vim.ui.select
+  pickers = {
+    find_files = {
+      -- `hidden = true` will still show the inside of `.git/` as it's not `.gitignore`d.
+      find_command = { "rg", "--files", "--hidden", "--glob", "!**/.git/*" },
     },
   },
-  {
-    "natecraddock/workspaces.nvim",
-    config = function()
-      require("workspaces").setup()
-      require("telescope").load_extension('workspaces')
-
-      vim.keymap.set("n", "<leader>dw", "<cmd>Telescope workspaces<CR>",
-        { noremap = true, silent = true })
-    end,
-  },
-  {
-    "folke/todo-comments.nvim",
-    dependencies = { "nvim-lua/plenary.nvim" },
-    config = function()
-      require("todo-comments").setup()
-    end,
-  },
-  {
-    "dlants/magenta.nvim",
-    lazy = false, -- you could also bind to <leader>mt
-    build = "npm install --frozen-lockfile",
-    opts = {},
-  },
-  {
-    "quolpr/quicktest.nvim",
-    config = function()
-      local qt = require("quicktest")
-
-      qt.setup({
-        adapters = {
-          require("quicktest.adapters.golang")({}),
-          -- The pytest adapter uses local tools, which doesn't work if we're using something like poetry.
-          require("quicktest_adapter_poetry")({}),
-          -- require("quicktest.adapters.pytest")({
-          -- require("quicktest.adapters.vitest")({}),
-          -- require("quicktest.adapters.playwright")({}),
-          -- require("quicktest.adapters.elixir"),
-          -- require("quicktest.adapters.criterion"),
-          -- require("quicktest.adapters.dart"),
-          -- require("quicktest.adapters.rspec"),
-        },
-        -- split or popup mode, when argument not specified
-        default_win_mode = "split",
-        use_builtin_colorizer = true
-      })
-    end,
-    dependencies = {
-      "nvim-lua/plenary.nvim",
-      "MunifTanjim/nui.nvim",
-    },
-    keys = {
-      {
-        "<leader>tl",
-        function()
-          local qt = require("quicktest")
-          -- current_win_mode return currently opened panel, split or popup
-          qt.run_line()
-          -- You can force open split or popup like this:
-          -- qt.run_line('split')
-          -- qt.run_line('popup')
-        end,
-        desc = "[T]est Run [L]line",
-      },
-      {
-        "<leader>tf",
-        function()
-          local qt = require("quicktest")
-
-          qt.run_file()
-        end,
-        desc = "[T]est Run [F]ile",
-      },
-      {
-        '<leader>td',
-        function()
-          local qt = require 'quicktest'
-
-          qt.run_dir()
-        end,
-        desc = '[T]est Run [D]ir',
-      },
-      {
-        '<leader>ta',
-        function()
-          local qt = require 'quicktest'
-
-          qt.run_all()
-        end,
-        desc = '[T]est Run [A]ll',
-      },
-      {
-        "<leader>tp",
-        function()
-          local qt = require("quicktest")
-
-          qt.run_previous()
-        end,
-        desc = "[T]est Run [P]revious",
-      },
-      {
-        "<leader>tt",
-        function()
-          local qt = require("quicktest")
-
-          qt.toggle_win("split")
-        end,
-        desc = "[T]est [T]oggle Window",
-      },
-      {
-        "<leader>tc",
-        function()
-          local qt = require("quicktest")
-
-          qt.cancel_current_run()
-        end,
-        desc = "[T]est [C]ancel Current Run",
-      },
-    },
-  },
-  {
-    "tobyshooters/palimpsest",
-    config = function()
-      require('palimpsest').setup({
-
-        -- LLM setup
-        api_key = os.getenv("ANTHROPIC_API_KEY"),
-        model = "claude-3-5-sonnet-latest",
-        system = "Be concise and direct in your responses. Respond without unnecessary explanation.",
-
-        -- Visual display of context markers
-        signs = {
-          context = "∙",
-          highlight = "DiagnosticInfo"
-        },
-
-        -- Keymap for marking context and querying
-        keymaps = {
-          mark = "<leader>m",
-          ask = "<leader>c",
-        }
-      })
-    end
-  },
-  {
-    "greggh/claude-code.nvim",
-    dependencies = {
-      "nvim-lua/plenary.nvim", -- Required for git operations
-    },
-    config = function()
-      require("claude-code").setup()
-    end
-  },
-  {
-    "rest-nvim/rest.nvim",
-    dependencies = {
-      "nvim-treesitter/nvim-treesitter",
-      opts = function(_, opts)
-        opts.ensure_installed = opts.ensure_installed or {}
-        table.insert(opts.ensure_installed, "http")
-      end,
+  extensions = {
+    fzf = {
+      fuzzy = true,                   -- false will only do exact matching
+      override_generic_sorter = true, -- override the generic sorter
+      override_file_sorter = true,    -- override the file sorter
+      case_mode = "smart_case",       -- or "ignore_case" or "respect_case"
+      -- the default case_mode is "smart_case"
     }
+  }
+}
+
+-- require('telescope').load_extension('fzf')
+
+require('trouble').setup({})
+vim.keymap.set("n", "<leader>xx", "<cmd>Trouble diagnostics toggle<cr>", { desc = "Diagnostics (Trouble)" })
+vim.keymap.set("n", "<leader>xX", "<cmd>Trouble diagnostics toggle filter.buf=0<cr>", { desc = "Buffer Diagnostics (Trouble)" })
+vim.keymap.set("n", "<leader>cs", "<cmd>Trouble symbols toggle focus=false<cr>", { desc = "Symbols (Trouble)" })
+vim.keymap.set("n", "<leader>cl", "<cmd>Trouble lsp toggle focus=false win.position=right<cr>", { desc = "LSP Definitions / references / ... (Trouble)" })
+vim.keymap.set("n", "<leader>xL", "<cmd>Trouble loclist toggle<cr>", { desc = "Location List (Trouble)" })
+vim.keymap.set("n", "<leader>xQ", "<cmd>Trouble qflist toggle<cr>", { desc = "Quickfix List (Trouble)" })
+
+require('symbols-outline').setup({})
+vim.keymap.set("n", "<leader>m", "<cmd>SymbolsOutline<cr>", { noremap = true, silent = true })
+
+vim.keymap.set("n", "<leader>te", "<cmd>TestNearest<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "<leader>Te", "<cmd>TestFile<CR>", { noremap = true, silent = true })
+
+vim.keymap.set("n", "<Leader>gs", "<cmd>Git<cr>", { noremap = true, silent = true })
+vim.keymap.set("n", "<leader>gpu", "<cmd>Git push<cr>", { desc = "Git push" })
+
+require('gitsigns').setup()
+
+local gitlinker = require("gitlinker")
+gitlinker.setup({ mappings = nil })
+
+vim.keymap.set("n", "<leader>gb", "", {
+  silent = true,
+  desc = "browse repo in browser",
+  callback = function()
+    gitlinker.get_repo_url({
+      action_callback = gitlinker.actions.open_in_browser
+    })
+  end
+})
+
+vim.keymap.set({ "n", "v" }, "<leader>gl", "", {
+  silent = true,
+  desc = "get git permlink",
+  callback = function()
+    local mode = string.lower(vim.fn.mode())
+    gitlinker.get_buf_range_url(mode)
+  end,
+})
+
+-- Prefer git instead of curl in order to improve connectivity in some environments
+-- require('nvim-treesitter.install').prefer_git = true
+
+require("nvim-treesitter.configs").setup({
+  ensure_installed = {
+    'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'vim', 'vimdoc',
+    "proto",
+    "lua",
+    "bash",
+    "yaml", "json",
+    "go", "gomod", "gowork",
+    "dockerfile", "hcl", "terraform",
+    "gotmpl", "helm",
+    "elixir",
+    "starlark",
+    "javascript", "typescript"
   },
-  {
-    "dzfrias/arena.nvim",
-    event = "BufWinEnter",
-    -- Calls `.setup()` automatically
-    config = true,
+  -- auto_install = true,
+  sync_install = false,
+  highlight = { enable = true },
+  indent = { enable = true },
+})
+
+vim.treesitter.language.register("starlark", "tiltfile")
+
+vim.filetype.add({
+  extension = {
+    gotmpl = 'gotmpl',
   },
+  pattern = {
+    [".*/templates/.*%.tpl"] = "helm",
+    [".*/templates/.*%.ya?ml"] = "helm",
+    ["helmfile.*%.ya?ml"] = "helm",
+  },
+})
+
+vim.keymap.set({ "v", "n" }, "gf", require("actions-preview").code_actions)
+
+require('flutter-tools').setup({})
+
+require("workspaces").setup()
+require("telescope").load_extension('workspaces')
+
+vim.keymap.set("n", "<leader>dw", "<cmd>Telescope workspaces<CR>",
+  { noremap = true, silent = true })
+
+require("todo-comments").setup()
+
+require('k8s-whisper').setup({
+  -- This is a GitHub repository
+  schemas_catalog = 'datreeio/CRDs-catalog',
+  -- This is a git ref, branch, tag, sha, etc.
+  schema_catalog_ref = 'main',
+})
+
+local qt = require("quicktest")
+
+qt.setup({
+  adapters = {
+    require("quicktest.adapters.golang")({}),
+    -- The pytest adapter uses local tools, which doesn't work if we're using something like poetry.
+    require("quicktest_adapter_poetry")({}),
+    -- require("quicktest.adapters.pytest")({}),
+    -- require("quicktest.adapters.vitest")({}),
+    -- require("quicktest.adapters.playwright")({}),
+    -- require("quicktest.adapters.elixir"),
+    -- require("quicktest.adapters.criterion"),
+    -- require("quicktest.adapters.dart"),
+    -- require("quicktest.adapters.rspec"),
+  },
+  -- split or popup mode, when argument not specified
+  default_win_mode = "split",
+  use_builtin_colorizer = true
+})
+
+vim.keymap.set("n", "<leader>tl", function()
+  local qt = require("quicktest")
+  -- current_win_mode return currently opened panel, split or popup
+  qt.run_line()
+  -- You can force open split or popup like this:
+  -- qt.run_line('split')
+  -- qt.run_line('popup')
+end, { desc = "[T]est Run [L]line" })
+
+vim.keymap.set("n", "<leader>tf", function()
+  local qt = require("quicktest")
+  qt.run_file()
+end, { desc = "[T]est Run [F]ile" })
+
+vim.keymap.set("n", '<leader>td', function()
+  local qt = require('quicktest')
+  qt.run_dir()
+end, { desc = '[T]est Run [D]ir' })
+
+vim.keymap.set("n", '<leader>ta', function()
+  local qt = require('quicktest')
+  qt.run_all()
+end, { desc = '[T]est Run [A]ll' })
+
+vim.keymap.set("n", "<leader>tp", function()
+  local qt = require("quicktest")
+  qt.run_previous()
+end, { desc = "[T]est Run [P]revious" })
+
+vim.keymap.set("n", "<leader>tt", function()
+  local qt = require("quicktest")
+  qt.toggle_win("split")
+end, { desc = "[T]est [T]oggle Window" })
+
+vim.keymap.set("n", "<leader>tc", function()
+  local qt = require("quicktest")
+  qt.cancel_current_run()
+end, { desc = "[T]est [C]ancel Current Run" })
+
+require('palimpsest').setup({
+
+  -- LLM setup
+  api_key = os.getenv("ANTHROPIC_API_KEY"),
+  model = "claude-3-5-sonnet-latest",
+  system = "Be concise and direct in your responses. Respond without unnecessary explanation.",
+
+  -- Visual display of context markers
+  signs = {
+    context = "∙",
+    highlight = "DiagnosticInfo"
+  },
+
+  -- Keymap for marking context and querying
+  keymaps = {
+    mark = "<leader>m",
+    ask = "<leader>c",
+  }
 })
 
 local function org_imports()
@@ -692,8 +518,6 @@ vim.api.nvim_create_autocmd("BufWritePre", {
   pattern = { "*.go" },
   callback = org_imports,
 })
-
-vim.cmd([[colorscheme github_dark]])
 
 vim.o.winborder = 'rounded'
 
@@ -1051,5 +875,5 @@ end, {
   desc = "Get all the information about all LSP attached",
 })
 
--- HTTP request plugin
--- require('http_request').setup()
+vim.cmd([[colorscheme github_dark]])
+
