@@ -60,6 +60,10 @@ vim.o.tabstop = 2       -- 2 space tab
 vim.o.softtabstop = 2   -- Causes backspace to delete 2 spaces = converted <TAB>
 vim.o.smarttab = true   -- Uses shiftwidth instead of tabstop at start of lines
 
+-- wrapping
+vim.o.textwidth = 80 -- This breaks lines at 80 characters when typing
+vim.o.linebreak = true -- wrap at word boundaries instead of mid-word
+
 -- numbers in the side
 vim.o.nu = true
 vim.o.number = true
@@ -112,9 +116,6 @@ vim.cmd [[
 vim.cmd([[
   autocmd BufNewFile,BufRead *.Jenkinsfile set filetype=groovy
 ]])
-
-vim.cmd [[ autocmd BufRead Tiltfile set filetype=tiltfile ]]
-vim.cmd [[ au FileType tiltfile set syntax=starlark ]]
 
 vim.api.nvim_create_user_command("PrView", function()
   vim.fn.system("gh pr view --web")
@@ -174,16 +175,20 @@ end
 -- match OverLength /\%81v.\+/
 
 -- enable ayu?
--- vim.cmd([[
---   let ayucolor="mirage"
---   colorscheme ayu
--- ]])
 
 vim.o.termguicolors = true
 
 vim.loader.enable()
 
 vim.pack.add({
+  -- Themes
+  "https://github.com/projekt0n/github-nvim-theme",
+  "https://github.com/ayu-theme/ayu-vim",
+  -- Libs for plugins
+  "https://github.com/nvim-lua/plenary.nvim",
+  "https://github.com/nvim-tree/nvim-web-devicons", -- not strictly required, but recommended
+  "https://github.com/MunifTanjim/nui.nvim",
+  -- Behaviour
   "https://github.com/tpope/vim-surround",
   "https://github.com/tpope/vim-unimpaired",
   "https://github.com/tpope/vim-rhubarb",
@@ -194,24 +199,15 @@ vim.pack.add({
   "https://github.com/kosayoda/nvim-lightbulb",
   "https://github.com/neovim/nvim-lspconfig",
   "https://github.com/j-hui/fidget.nvim", -- TODO: this isn't working any more since 0.11 lsp migration
-  "https://github.com/projekt0n/github-nvim-theme",
-  "https://github.com/romainl/Apprentice",
-  "https://github.com/ayu-theme/ayu-vim",
   "https://github.com/Joorem/vim-haproxy",
-  "https://github.com/manzanit0/k8s-whisper.nvim",
+  -- "https://github.com/manzanit0/k8s-whisper.nvim",
   "https://github.com/mason-org/mason.nvim",
-  -- "https://github.com/kaiuri/nvim-juliana",
   "https://github.com/vim-test/vim-test",
   -- "https://github.com/numToStr/Comment.nvim",
-  "https://github.com/s1n7ax/nvim-terminal",
-  "https://github.com/nvim-lua/plenary.nvim",
-  "https://github.com/nvim-tree/nvim-web-devicons", -- not strictly required, but recommended
-  "https://github.com/MunifTanjim/nui.nvim",
-  "https://github.com/3rd/image.nvim", -- Optional image support in preview window: See `# Preview Mode` for more information
   { src = "https://github.com/nvim-neo-tree/neo-tree.nvim", version = "v3.x" },
+  "https://github.com/stevearc/oil.nvim",
   "https://github.com/nvim-telescope/telescope.nvim",
   "https://github.com/nvim-telescope/telescope-fzf-native.nvim",
-  "https://github.com/folke/trouble.nvim",
   "https://github.com/simrat39/symbols-outline.nvim",
   "https://github.com/tpope/vim-fugitive",
   "https://github.com/lewis6991/gitsigns.nvim",
@@ -219,11 +215,10 @@ vim.pack.add({
   "https://github.com/nvim-treesitter/nvim-treesitter",
   "https://github.com/aznhe21/actions-preview.nvim",
   "https://github.com/akinsho/flutter-tools.nvim",
-  "https://github.com/natecraddock/workspaces.nvim",
   "https://github.com/folke/todo-comments.nvim",
   "https://github.com/quolpr/quicktest.nvim",
-  "https://github.com/tobyshooters/palimpsest",
-  -- "https://github.com/rest-nvim/rest.nvim",
+  -- "https://github.com/MeanderingProgrammer/render-markdown.nvim",
+  "https://github.com/andrewferrier/wrapping.nvim",
 })
 
 -- vim.pack doesn't support build hooks, so we need to manually build telescope-fzf-native
@@ -235,16 +230,12 @@ end
 
 -- Plugin configurations
 require('mason').setup()
--- require('nvim-juliana').setup({})
--- require('Comment.nvim').setup({})
 
-vim.o.hidden = true -- this is needed to be set to reuse terminal between toggles
-require('nvim-terminal').setup({
-  toggle_keymap = '<C-,>',
-  increase_height_keymap = '<leader>t=',
-  decrease_height_keymap = '<leader>t-',
-  window_height_change_amount = 25,
-})
+require("wrapping").setup()
+vim.keymap.set("n", "<leader>wt", "<Plug>(wrapping-toggle-wrap-mode)")
+
+require("oil").setup()
+vim.keymap.set("n", "_", "<CMD>Oil<CR>", { desc = "Open parent directory" })
 
 -- Unless you are still migrating, remove the deprecated commands from v1.x
 vim.cmd([[ let g:neo_tree_remove_legacy_commands = 1 ]])
@@ -284,14 +275,9 @@ vim.keymap.set("n", "<leader>fg", builtin.live_grep, {})
 vim.keymap.set("n", "<leader>fb", builtin.buffers, {})
 vim.keymap.set("n", "<leader>fh", builtin.help_tags, {})
 
-local trouble = require("trouble.sources.telescope")
 local telescope = require("telescope")
 telescope.setup {
   defaults = {
-    mappings = {
-      i = { ["<c-t>"] = trouble.open },
-      n = { ["<c-t>"] = trouble.open },
-    },
   },
   pickers = {
     find_files = {
@@ -311,14 +297,6 @@ telescope.setup {
 }
 
 -- require('telescope').load_extension('fzf')
-
-require('trouble').setup({})
-vim.keymap.set("n", "<leader>xx", "<cmd>Trouble diagnostics toggle<cr>", { desc = "Diagnostics (Trouble)" })
-vim.keymap.set("n", "<leader>xX", "<cmd>Trouble diagnostics toggle filter.buf=0<cr>", { desc = "Buffer Diagnostics (Trouble)" })
-vim.keymap.set("n", "<leader>cs", "<cmd>Trouble symbols toggle focus=false<cr>", { desc = "Symbols (Trouble)" })
-vim.keymap.set("n", "<leader>cl", "<cmd>Trouble lsp toggle focus=false win.position=right<cr>", { desc = "LSP Definitions / references / ... (Trouble)" })
-vim.keymap.set("n", "<leader>xL", "<cmd>Trouble loclist toggle<cr>", { desc = "Location List (Trouble)" })
-vim.keymap.set("n", "<leader>xQ", "<cmd>Trouble qflist toggle<cr>", { desc = "Quickfix List (Trouble)" })
 
 require('symbols-outline').setup({})
 vim.keymap.set("n", "<leader>m", "<cmd>SymbolsOutline<cr>", { noremap = true, silent = true })
@@ -353,11 +331,13 @@ vim.keymap.set({ "n", "v" }, "<leader>gl", "", {
   end,
 })
 
--- Prefer git instead of curl in order to improve connectivity in some environments
--- require('nvim-treesitter.install').prefer_git = true
 
-require("nvim-treesitter.configs").setup({
-  ensure_installed = {
+local treesitter = require("nvim-treesitter")
+treesitter.setup({
+		highlight = { enable = true }, -- enable treesitter syntax highlighting
+})
+
+local languages = {
     'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'vim', 'vimdoc',
     "proto",
     "lua",
@@ -369,14 +349,28 @@ require("nvim-treesitter.configs").setup({
     "elixir",
     "starlark",
     "javascript", "typescript"
-  },
-  -- auto_install = true,
-  sync_install = false,
-  highlight = { enable = true },
-  indent = { enable = true },
-})
+  }
+treesitter.install(languages)
 
 vim.treesitter.language.register("starlark", "tiltfile")
+
+vim.filetype.add({
+  filename = { Tiltfile = 'tiltfile' },
+})
+
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = '*',
+  callback = function()
+    vim.treesitter.start()
+  end,
+})
+
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'tiltfile',
+  callback = function()
+    vim.bo.syntax = 'starlark'
+  end,
+})
 
 vim.filetype.add({
   extension = {
@@ -393,20 +387,15 @@ vim.keymap.set({ "v", "n" }, "gf", require("actions-preview").code_actions)
 
 require('flutter-tools').setup({})
 
-require("workspaces").setup()
-require("telescope").load_extension('workspaces')
-
-vim.keymap.set("n", "<leader>dw", "<cmd>Telescope workspaces<CR>",
-  { noremap = true, silent = true })
-
 require("todo-comments").setup()
 
-require('k8s-whisper').setup({
-  -- This is a GitHub repository
-  schemas_catalog = 'datreeio/CRDs-catalog',
-  -- This is a git ref, branch, tag, sha, etc.
-  schema_catalog_ref = 'main',
-})
+-- TODO: need to figure out how to remove stupid comments
+-- require('k8s-whisper').setup({
+--   -- This is a GitHub repository
+--   schemas_catalog = 'datreeio/CRDs-catalog',
+--   -- This is a git ref, branch, tag, sha, etc.
+--   schema_catalog_ref = 'main',
+-- })
 
 local qt = require("quicktest")
 
@@ -466,26 +455,6 @@ vim.keymap.set("n", "<leader>tc", function()
   local qt = require("quicktest")
   qt.cancel_current_run()
 end, { desc = "[T]est [C]ancel Current Run" })
-
-require('palimpsest').setup({
-
-  -- LLM setup
-  api_key = os.getenv("ANTHROPIC_API_KEY"),
-  model = "claude-3-5-sonnet-latest",
-  system = "Be concise and direct in your responses. Respond without unnecessary explanation.",
-
-  -- Visual display of context markers
-  signs = {
-    context = "∙",
-    highlight = "DiagnosticInfo"
-  },
-
-  -- Keymap for marking context and querying
-  keymaps = {
-    mark = "<leader>m",
-    ask = "<leader>c",
-  }
-})
 
 local function org_imports()
   local clients = vim.lsp.get_clients()
@@ -702,6 +671,7 @@ vim.lsp.config.gopls = {
   root_markers = { ".git", "go.mod", "go.work", vim.uv.cwd() },
   settings = {
     gopls = {
+      semanticTokens = true,
       completeUnimported = true,
       usePlaceholders = true,
       analyses = {
@@ -785,7 +755,7 @@ vim.lsp.enable({
   -- LSPs with default configuration
   'tilt_ls',
   'terraformls',
-  'denols',
+  -- 'denols',
   "ocamlls",
   "clojure_lsp",
   "dartls",
@@ -876,4 +846,9 @@ end, {
 })
 
 vim.cmd([[colorscheme github_dark]])
+
+-- vim.cmd([[
+--   let ayucolor="mirage"
+--   colorscheme ayu
+-- ]])
 
