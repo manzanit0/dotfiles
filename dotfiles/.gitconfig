@@ -13,12 +13,14 @@
     conflictstyle = zdiff3
 # This ends delta
 
-
-
 [user]
-email = unico.javier@gmail.com
-name = Javier García
-signingkey = A3F00A1ECACECE0C
+	email = 10437518+manzanit0@users.noreply.github.com
+	name = Javier García
+	signingkey = 108E89384907FB72
+[commit]
+	gpgsign = true
+[tag]
+	gpgSign = true
 [core]
 	excludesFile = ~/.gitignore-global
   ; pager = diff-so-fancy | less --tabs=4 -RFX
