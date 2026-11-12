@@ -25,14 +25,15 @@ vim.o.incsearch = true                                                         -
 vim.o.ignorecase = true                                                        -- ignore case when searching
 vim.o.smartcase = true                                                         -- smarter search case
 vim.o.wildignorecase = true                                                    -- ignore case in file completion
-vim.o.wildignore = ""                                                          -- remove default ignores
-vim.o.wildignore = vim.o.wildignore .. "*.o,*.obj,*.so,*.a,*.dylib,*.pyc,*.hi" -- ignore compiled files
-vim.o.wildignore = vim.o.wildignore .. "*.zip,*.gz,*.xz,*.tar,*.rar"           -- ignore compressed files
-vim.o.wildignore = vim.o.wildignore .. "*/.git/*,*/.hg/*,*/.svn/*"             -- ignore SCM files
-vim.o.wildignore = vim.o.wildignore .. "*.png,*.jpg,*.jpeg,*.gif"              -- ignore image files
-vim.o.wildignore = vim.o.wildignore .. "*.pdf,*.dmg"                           -- ignore binary files
-vim.o.wildignore = vim.o.wildignore .. ".*.sw*,*~"                             -- ignore editor files
-vim.o.wildignore = vim.o.wildignore .. ".DS_Store"                             -- ignore OS files
+vim.o.wildignore = table.concat({
+  "*.o,*.obj,*.so,*.a,*.dylib,*.pyc,*.hi", -- compiled
+  "*.zip,*.gz,*.xz,*.tar,*.rar",           -- compressed
+  "*/.git/*,*/.hg/*,*/.svn/*",             -- SCM
+  "*.png,*.jpg,*.jpeg,*.gif",              -- images
+  "*.pdf,*.dmg",                           -- binary
+  ".*.sw*,*~",                             -- editor
+  ".DS_Store",                             -- OS
+}, ",")
 
 -- folding
 -- https://www.jackfranklin.co.uk/blog/code-folding-in-vim-neovim/
@@ -65,7 +66,6 @@ vim.o.textwidth = 80 -- This breaks lines at 80 characters when typing
 vim.o.linebreak = true -- wrap at word boundaries instead of mid-word
 
 -- numbers in the side
-vim.o.nu = true
 vim.o.number = true
 vim.o.numberwidth = 5
 
@@ -88,34 +88,21 @@ vim.g.maplocalleader = ";"
 
 -- tpope/vim-unimpaired uses '[' and ']', however, they're not too comfortable on my
 -- layout. '<' and '>' are much better.
-vim.cmd [[
-  nmap < [
-  nmap > ]
-  omap < [
-  omap > ]
-  xmap < [
-  xmap > ]
-]]
+vim.keymap.set({'n', 'o', 'x'}, '<', '[', { remap = true })
+vim.keymap.set({'n', 'o', 'x'}, '>', ']', { remap = true })
 
 -- In case you use :terminal, bring back ESC.
-vim.cmd [[ tnoremap <Esc> <C-\><C-n> ]]
+vim.keymap.set('t', '<Esc>', '<C-\\><C-n>')
 
-vim.cmd [[
-  function! ToggleQuickFix()
-  if getqflist({'winid':0}).winid
-  cclose
+local function toggle_quickfix()
+  if vim.fn.getqflist({ winid = 0 }).winid ~= 0 then
+    vim.cmd.cclose()
   else
-  copen
-  endif
-  endfunction
-
-  command! -nargs=0 -bar ToggleQuickFix call ToggleQuickFix()
-  nnoremap <silent> cq :ToggleQuickFix<CR>
-]]
-
-vim.cmd([[
-  autocmd BufNewFile,BufRead *.Jenkinsfile set filetype=groovy
-]])
+    vim.cmd.copen()
+  end
+end
+vim.api.nvim_create_user_command('ToggleQuickFix', toggle_quickfix, { bar = true })
+vim.keymap.set('n', 'cq', toggle_quickfix, { silent = true })
 
 vim.api.nvim_create_user_command("PrView", function()
   vim.fn.system("gh pr view --web")
@@ -128,9 +115,7 @@ end, { desc = "Push branch and create a PR in draft mode" })
 vim.api.nvim_create_autocmd('TextYankPost', {
   desc = 'Highlight when yanking (copying) text',
   group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
-  callback = function()
-    vim.highlight.on_yank()
-  end,
+  callback = vim.highlight.on_yank,
 })
 
 -- mappings
@@ -154,11 +139,9 @@ for _, mapping in ipairs({
   -- emulate permanent global marks
   { "n", "<leader>nc", "<cmd>edit ~/.config/nvim/init.lua<cr>" },
   -- absolute path (/something/src/foo.txt)
-  { "n", "<leader>cF", ":let @+=expand(\"%:p\")<CR>" },
+  { "n", "<leader>cF", function() vim.fn.setreg('+', vim.fn.expand('%:p')) end },
   -- relative path
-  { "n", "<leader>cf", ":let @+=expand(\"%\")<CR>" },
-  -- keep the cursor in place while joining lines
-  { "n", "J",          "mZJ`Z" },
+  { "n", "<leader>cf", function() vim.fn.setreg('+', vim.fn.expand('%')) end },
   { "n", "<leader>qq", ":qa!<CR>" },
 }) do
   vim.keymap.set(mapping[1], mapping[2], mapping[3], { noremap = true, silent = true })
@@ -208,17 +191,21 @@ vim.pack.add({
   "https://github.com/stevearc/oil.nvim",
   "https://github.com/nvim-telescope/telescope.nvim",
   "https://github.com/nvim-telescope/telescope-fzf-native.nvim",
-  "https://github.com/simrat39/symbols-outline.nvim",
+  "https://github.com/hedyhli/outline.nvim",
   "https://github.com/tpope/vim-fugitive",
   "https://github.com/lewis6991/gitsigns.nvim",
   "https://github.com/ruifm/gitlinker.nvim",
   "https://github.com/nvim-treesitter/nvim-treesitter",
+  -- run :call mkdp#util#install()
   "https://github.com/aznhe21/actions-preview.nvim",
   "https://github.com/akinsho/flutter-tools.nvim",
   "https://github.com/folke/todo-comments.nvim",
   "https://github.com/quolpr/quicktest.nvim",
   -- "https://github.com/MeanderingProgrammer/render-markdown.nvim",
+  "https://github.com/iamcco/markdown-preview.nvim",
   "https://github.com/andrewferrier/wrapping.nvim",
+  "https://github.com/junegunn/goyo.vim",
+  "https://github.com/nosduco/remote-sshfs.nvim",
 })
 
 -- vim.pack doesn't support build hooks, so we need to manually build telescope-fzf-native
@@ -229,6 +216,23 @@ if vim.fn.isdirectory(fzf_lib) == 1 and vim.fn.filereadable(fzf_lib .. '/build/l
 end
 
 -- Plugin configurations
+
+vim.api.nvim_create_autocmd("PackChanged", {
+  callback = function(ev)
+    local d = ev.data
+    if d.spec.name == "markdown-preview.nvim"
+      and (d.kind == "install" or d.kind == "update") then
+      vim.notify("Building markdown-preview.nvim...")
+      vim.system(
+        { "sh", "-c", "npx --yes yarn install && npx --yes yarn build" },
+        { cwd = d.path }
+      )
+    end
+  end,
+})
+
+require('remote-sshfs').setup()
+
 require('mason').setup()
 
 require("wrapping").setup()
@@ -237,8 +241,7 @@ vim.keymap.set("n", "<leader>wt", "<Plug>(wrapping-toggle-wrap-mode)")
 require("oil").setup()
 vim.keymap.set("n", "_", "<CMD>Oil<CR>", { desc = "Open parent directory" })
 
--- Unless you are still migrating, remove the deprecated commands from v1.x
-vim.cmd([[ let g:neo_tree_remove_legacy_commands = 1 ]])
+vim.g.neo_tree_remove_legacy_commands = 1
 
 vim.keymap.set("n", "<leader>o", "<cmd>Neotree focus<cr>", { noremap = true, silent = true })
 vim.keymap.set("n", "<leader>e", "<cmd>Neotree toggle<cr>", { noremap = true, silent = true })
@@ -277,8 +280,6 @@ vim.keymap.set("n", "<leader>fh", builtin.help_tags, {})
 
 local telescope = require("telescope")
 telescope.setup {
-  defaults = {
-  },
   pickers = {
     find_files = {
       -- `hidden = true` will still show the inside of `.git/` as it's not `.gitignore`d.
@@ -298,8 +299,8 @@ telescope.setup {
 
 -- require('telescope').load_extension('fzf')
 
-require('symbols-outline').setup({})
-vim.keymap.set("n", "<leader>m", "<cmd>SymbolsOutline<cr>", { noremap = true, silent = true })
+require('outline').setup({})
+vim.keymap.set("n", "<leader>m", "<cmd>Outline<cr>", { noremap = true, silent = true })
 
 vim.keymap.set("n", "<leader>te", "<cmd>TestNearest<CR>", { noremap = true, silent = true })
 vim.keymap.set("n", "<leader>Te", "<cmd>TestFile<CR>", { noremap = true, silent = true })
@@ -312,24 +313,13 @@ require('gitsigns').setup()
 local gitlinker = require("gitlinker")
 gitlinker.setup({ mappings = nil })
 
-vim.keymap.set("n", "<leader>gb", "", {
-  silent = true,
-  desc = "browse repo in browser",
-  callback = function()
-    gitlinker.get_repo_url({
-      action_callback = gitlinker.actions.open_in_browser
-    })
-  end
-})
+vim.keymap.set("n", "<leader>gb", function()
+  gitlinker.get_repo_url({ action_callback = gitlinker.actions.open_in_browser })
+end, { silent = true, desc = "browse repo in browser" })
 
-vim.keymap.set({ "n", "v" }, "<leader>gl", "", {
-  silent = true,
-  desc = "get git permlink",
-  callback = function()
-    local mode = string.lower(vim.fn.mode())
-    gitlinker.get_buf_range_url(mode)
-  end,
-})
+vim.keymap.set({ "n", "v" }, "<leader>gl", function()
+  gitlinker.get_buf_range_url(string.lower(vim.fn.mode()))
+end, { silent = true, desc = "get git permlink" })
 
 
 local treesitter = require("nvim-treesitter")
@@ -340,8 +330,6 @@ treesitter.setup({
 local languages = {
     'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'vim', 'vimdoc',
     "proto",
-    "lua",
-    "bash",
     "yaml", "json",
     "go", "gomod", "gowork",
     "dockerfile", "hcl", "terraform",
@@ -356,12 +344,22 @@ vim.treesitter.language.register("starlark", "tiltfile")
 
 vim.filetype.add({
   filename = { Tiltfile = 'tiltfile' },
+  extension = {
+    gotmpl = 'gotmpl',
+  },
+  pattern = {
+    [".*%.Jenkinsfile"] = "groovy",
+    [".*/templates/.*%.tpl"] = "helm",
+    [".*/templates/.*%.ya?ml"] = "helm",
+    ["helmfile.*%.ya?ml"] = "helm",
+  },
 })
 
 vim.api.nvim_create_autocmd('FileType', {
   pattern = '*',
-  callback = function()
-    vim.treesitter.start()
+  callback = function(args)
+    -- pcall to silently skip filetypes without a treesitter parser (e.g. qf, help)
+    pcall(vim.treesitter.start, args.buf)
   end,
 })
 
@@ -370,17 +368,6 @@ vim.api.nvim_create_autocmd('FileType', {
   callback = function()
     vim.bo.syntax = 'starlark'
   end,
-})
-
-vim.filetype.add({
-  extension = {
-    gotmpl = 'gotmpl',
-  },
-  pattern = {
-    [".*/templates/.*%.tpl"] = "helm",
-    [".*/templates/.*%.ya?ml"] = "helm",
-    ["helmfile.*%.ya?ml"] = "helm",
-  },
 })
 
 vim.keymap.set({ "v", "n" }, "gf", require("actions-preview").code_actions)
@@ -417,44 +404,13 @@ qt.setup({
   use_builtin_colorizer = true
 })
 
-vim.keymap.set("n", "<leader>tl", function()
-  local qt = require("quicktest")
-  -- current_win_mode return currently opened panel, split or popup
-  qt.run_line()
-  -- You can force open split or popup like this:
-  -- qt.run_line('split')
-  -- qt.run_line('popup')
-end, { desc = "[T]est Run [L]line" })
-
-vim.keymap.set("n", "<leader>tf", function()
-  local qt = require("quicktest")
-  qt.run_file()
-end, { desc = "[T]est Run [F]ile" })
-
-vim.keymap.set("n", '<leader>td', function()
-  local qt = require('quicktest')
-  qt.run_dir()
-end, { desc = '[T]est Run [D]ir' })
-
-vim.keymap.set("n", '<leader>ta', function()
-  local qt = require('quicktest')
-  qt.run_all()
-end, { desc = '[T]est Run [A]ll' })
-
-vim.keymap.set("n", "<leader>tp", function()
-  local qt = require("quicktest")
-  qt.run_previous()
-end, { desc = "[T]est Run [P]revious" })
-
-vim.keymap.set("n", "<leader>tt", function()
-  local qt = require("quicktest")
-  qt.toggle_win("split")
-end, { desc = "[T]est [T]oggle Window" })
-
-vim.keymap.set("n", "<leader>tc", function()
-  local qt = require("quicktest")
-  qt.cancel_current_run()
-end, { desc = "[T]est [C]ancel Current Run" })
+vim.keymap.set("n", "<leader>tl", qt.run_line, { desc = "[T]est Run [L]line" })
+vim.keymap.set("n", "<leader>tf", qt.run_file, { desc = "[T]est Run [F]ile" })
+vim.keymap.set("n", '<leader>td', qt.run_dir, { desc = '[T]est Run [D]ir' })
+vim.keymap.set("n", '<leader>ta', qt.run_all, { desc = '[T]est Run [A]ll' })
+vim.keymap.set("n", "<leader>tp", qt.run_previous, { desc = "[T]est Run [P]revious" })
+vim.keymap.set("n", "<leader>tt", function() qt.toggle_win("split") end, { desc = "[T]est [T]oggle Window" })
+vim.keymap.set("n", "<leader>tc", qt.cancel_current_run, { desc = "[T]est [C]ancel Current Run" })
 
 local function org_imports()
   local clients = vim.lsp.get_clients()
@@ -495,6 +451,8 @@ vim.o.winborder = 'rounded'
 
 -- Not sure if I like virtual lines over EOL
 vim.diagnostic.config({ virtual_text = true })
+
+vim.keymap.set('n', '<space>q', vim.diagnostic.setqflist, { noremap = true, silent = true })
 -- vim.diagnostic.config({
 --   virtual_lines = {
 --     current_line = true,
@@ -503,277 +461,173 @@ vim.diagnostic.config({ virtual_text = true })
 
 vim.api.nvim_create_autocmd("LspAttach", {
   callback = function(ev)
-    -- NOTE: this is the set up I had before 0.11
-    local map = function(keys, func, desc)
-      vim.keymap.set('n', keys, func,
-        { buffer = ev.buf, desc = 'LSP: ' .. desc })
-    end
-
-    -- code actions
-    map("ff", vim.lsp.buf.format, '[F]ormat')
-    -- vim.keymap.set('n', '<C-i>', vim.lsp.buf.code_action, opts) -- handled by aznhe21/actions-preview.nvim
-    map('<F2>', vim.lsp.buf.rename, 'Rename')
-
-    -- code navigation
-    map('gd', vim.lsp.buf.definition, '[G]o [D]efinition')
-    map('gD', vim.lsp.buf.declaration, '[G]o [D]eclaration')
-    map("K", vim.lsp.buf.hover, 'Hover Documentation')
-
-    -- references code navigation (quickfix list)
-    map("gr", vim.lsp.buf.references, '[G]o [R]eferences')
-    map("<leader>gr", require('telescope.builtin').lsp_references,
-      '[G]o [R]eferences')
-
-    map("gI", vim.lsp.buf.implementation, '[G]o [I]mplementation')
-    map("<leader>gI", require('telescope.builtin').lsp_implementations,
-      '[G]o [I]mplementation')
-
-    -- references code navigation (Telescope)
-    map('<leader>ds', require('telescope.builtin').lsp_document_symbols,
-      '[D]ocument [S]ymbols')
-    map('<leader>D', require('telescope.builtin').lsp_type_definitions,
-      '[D]efinition')
-    map('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ctions')
-    -- ENDNOTE
-
-    -- NOTE: copied from https://github.com/Rishabh672003/Neovim/blob/main/lua/rj/lsp.lua
-    local bufnr = ev.buf
     local client = vim.lsp.get_client_by_id(ev.data.client_id)
-    if not client then
-      return
-    end
+    if not client then return end
 
-    -- Enable autocompletion when typing
-    -- NOTE: it picks the first option
-    -- if client:supports_method('textDocument/completion') then
-    --   vim.lsp.completion.enable(true, client.id, ev.buf, { autotrigger = true })
-    -- end
-
-    -- <C-x> <C-o> to also trigger autocompletion
     if client.server_capabilities.completionProvider then
-      vim.bo[bufnr].omnifunc = "v:lua.vim.lsp.omnifunc"
+      vim.bo[ev.buf].omnifunc = "v:lua.vim.lsp.omnifunc"
     end
-
     if client.server_capabilities.definitionProvider then
-      vim.bo[bufnr].tagfunc = "v:lua.vim.lsp.tagfunc"
+      vim.bo[ev.buf].tagfunc = "v:lua.vim.lsp.tagfunc"
     end
 
-    --- Disable semantic tokens
+    -- Rely exclusively on treesitter highlighting.
     client.server_capabilities.semanticTokensProvider = nil
 
-    -- All the keymaps
-    -- stylua: ignore start
     local lsp = vim.lsp
-    local opts = { silent = true }
-    local function opt(desc, others)
-      return vim.tbl_extend("force", opts, { desc = desc }, others or {})
+    local function map(keys, func, desc)
+      vim.keymap.set("n", keys, func, { silent = true, buffer = ev.buf, desc = desc })
     end
 
-    -- diagnostics
-    vim.keymap.set('n', '<F8>', vim.diagnostic.goto_next, { noremap = true, silent = true })
-    -- FIXME: the Shift+F8 isn't quite working. Too bad I don't use it much.
-    vim.keymap.set('n', '<S-F8>', vim.diagnostic.goto_prev, { noremap = true, silent = true })
-    -- Note: By leveraging the quickfix list instead of location, we get
-    -- project wide diagnostics instead of bufferwise.
-    vim.keymap.set('n', '<space>q', vim.diagnostic.setqflist, { noremap = true, silent = true })
-
-    vim.keymap.set("n", "gd", lsp.buf.definition, opt("Go to definition"))
-    vim.keymap.set("n", "gD", lsp.buf.declaration, opt("Go to declaration"))
-    vim.keymap.set("n", "gI", function() lsp.buf.implementation({ border = "single" }) end, opt("Go to implementation"))
-    vim.keymap.set("n", "gr", lsp.buf.references, opt("Show References"))
-    vim.keymap.set("n", "gl", vim.diagnostic.open_float, opt("Open diagnostic in float"))
-    -- keymap("n", "<C-k>", lsp.buf.signature_help, opts)
-    -- -- disable the default binding first before using a custom one
-    -- pcall(vim.keymap.del, "n", "K", { buffer = ev.buf })
-    vim.keymap.set("n", "K", function() lsp.buf.hover({ border = "single", max_height = 30, max_width = 120 }) end,
-      opt("Toggle hover"))
-    vim.keymap.set("n", "<Leader>lF", vim.cmd.FormatToggle, opt("Toggle AutoFormat"))
-    vim.keymap.set("n", "<Leader>lI", vim.cmd.Mason, opt("Mason"))
-    vim.keymap.set("n", "<Leader>lS", lsp.buf.workspace_symbol, opt("Workspace Symbols"))
-    vim.keymap.set("n", "<Leader>la", lsp.buf.code_action, opt("Code Action"))
-    vim.keymap.set("n", "<Leader>lh", function() lsp.inlay_hint.enable(not lsp.inlay_hint.is_enabled({})) end,
-      opt("Toggle Inlayhints"))
-    vim.keymap.set("n", "<Leader>li", vim.cmd.LspInfo, opt("LspInfo"))
-    vim.keymap.set("n", "<Leader>ll", lsp.codelens.run, opt("Run CodeLens"))
-    vim.keymap.set("n", "<Leader>lr", lsp.buf.rename, opt("Rename"))
-    vim.keymap.set("n", "<Leader>ls", lsp.buf.document_symbol, opt("Doument Symbols"))
-
-    -- diagnostic mappings
-    vim.keymap.set("n", "<Leader>dD", function()
-      local ok, diag = pcall(require, "rj.extras.workspace-diagnostic")
-      if ok then
-        for _, cur_client in ipairs(vim.lsp.get_clients({ bufnr = 0 })) do
-          diag.populate_workspace_diagnostics(cur_client, 0)
-        end
-        vim.notify("INFO: Diagnostic populated")
-      end
-    end, opt("Popluate diagnostic for the whole workspace"))
-    vim.keymap.set("n", "<Leader>dn", function() vim.diagnostic.jump({ count = 1, float = true }) end,
-      opt("Next Diagnostic"))
-    vim.keymap.set("n", "<Leader>dp", function() vim.diagnostic.jump({ count = -1, float = true }) end,
-      opt("Prev Diagnostic"))
-    vim.keymap.set("n", "<Leader>dq", vim.diagnostic.setloclist, opt("Set LocList"))
-    vim.keymap.set("n", "<Leader>dv", function()
+    map("ff",         lsp.buf.format,                                                                        "Format")
+    map("<F2>",       lsp.buf.rename,                                                                        "Rename")
+    map("gd",         lsp.buf.definition,                                                                    "Go to definition")
+    map("gD",         lsp.buf.declaration,                                                                   "Go to declaration")
+    map("gI",         function() lsp.buf.implementation({ border = "single" }) end,                          "Go to implementation")
+    map("gr",         lsp.buf.references,                                                                    "Show references")
+    map("gl",         vim.diagnostic.open_float,                                                             "Open diagnostic float")
+    map("K",          function() lsp.buf.hover({ border = "single", max_height = 30, max_width = 120 }) end, "Hover")
+    map("<leader>gr", builtin.lsp_references,                                                                "References")
+    map("<leader>gI", builtin.lsp_implementations,                                                           "Implementations")
+    map("<leader>ds", builtin.lsp_document_symbols,                                                          "Document symbols")
+    map("<leader>D",  builtin.lsp_type_definitions,                                                          "Type definition")
+    map("<leader>ca", lsp.buf.code_action,                                                                   "Code actions")
+    map("<leader>lh", function() lsp.inlay_hint.enable(not lsp.inlay_hint.is_enabled({})) end,               "Toggle inlay hints")
+    map("<leader>li", vim.cmd.LspInfo,                                                                       "LSP info")
+    map("<leader>ll", lsp.codelens.run,                                                                      "Run codelens")
+    map("<leader>lS", lsp.buf.workspace_symbol,                                                              "Workspace symbols")
+    map("<leader>lI", vim.cmd.Mason,                                                                         "Mason")
+    map("<F8>",       function() vim.diagnostic.jump({ count = 1 }) end,                                     "Next diagnostic")
+    map("<F7>",       function() vim.diagnostic.jump({ count = -1 }) end,                                    "Prev diagnostic")
+    map("<Leader>dn", function() vim.diagnostic.jump({ count = 1, float = true }) end,                       "Next diagnostic (float)")
+    map("<Leader>dp", function() vim.diagnostic.jump({ count = -1, float = true }) end,                      "Prev diagnostic (float)")
+    map("<Leader>dq", vim.diagnostic.setloclist,                                                             "Set loclist")
+    map("<Leader>dv", function()
       vim.diagnostic.config({ virtual_lines = not vim.diagnostic.config().virtual_lines })
-    end, opt("Toggle diagnostic virtual_lines"))
-    -- stylua: ignore end
+    end, "Toggle virtual lines")
   end,
 })
 
--- Might want to look into? https://github.com/folke/lazydev.nvim
-vim.lsp.config.lua_ls = {
-  cmd = { "lua-language-server" },
-  filetypes = { "lua" },
-  root_markers = {
-    '.luarc.json',
-    '.luarc.jsonc',
-    '.luacheckrc',
-    '.stylua.toml',
-    'stylua.toml',
-    'selene.toml',
-    'selene.yml',
-    '.git',
-  },
-  -- This config is simply to be use lua for Neovim
-  on_init = function(client)
-    if client.workspace_folders then
-      local path = client.workspace_folders[1].name
-      if
-          path ~= vim.fn.stdpath('config')
-          and (vim.uv.fs_stat(path .. '/.luarc.json') or vim.uv.fs_stat(path .. '/.luarc.jsonc'))
-      then
-        return
+local lsp_configs = {
+  marksman    = {},
+  tilt_ls     = {},
+  terraformls = { mason = "terraform-ls" },
+  ocamlls     = {},
+  clojure_lsp = { mason = "clojure-lsp" },
+  dartls      = {},
+  bashls      = { mason = "bash-language-server" },
+  -- vale_ls     = { mason = "vale-ls" },
+  sqls        = { mason = "sqls" },
+  elixirls    = { mason = "elixir-ls" },
+  ruff        = { mason = "ruff" },
+  ts_ls       = { mason = "typescript-language-server" },
+  docker_language_server    = { mason = "docker-language-server" },
+  lua_ls = {
+    mason = "lua-language-server",
+    cmd = { "lua-language-server" },
+    filetypes = { "lua" },
+    root_markers = {
+      '.luarc.json', '.luarc.jsonc', '.luacheckrc',
+      '.stylua.toml', 'stylua.toml', 'selene.toml', 'selene.yml', '.git',
+    },
+    on_init = function(client)
+      if client.workspace_folders then
+        local path = client.workspace_folders[1].name
+        if path ~= vim.fn.stdpath('config')
+            and (vim.uv.fs_stat(path .. '/.luarc.json') or vim.uv.fs_stat(path .. '/.luarc.jsonc'))
+        then
+          return
+        end
       end
+      client.config.settings.Lua = vim.tbl_deep_extend('force', client.config.settings.Lua, {
+        workspace = { checkThirdParty = false, library = { vim.env.VIMRUNTIME } }
+      })
+    end,
+    settings = { Lua = { telemetry = { enable = false } } },
+  },
+  gopls = {
+    mason = "gopls",
+    cmd = { "gopls" },
+    filetypes = { "go", "gotempl", "gowork", "gomod" },
+    root_markers = { ".git", "go.mod", "go.work", vim.uv.cwd() },
+    settings = {
+      gopls = {
+        completeUnimported = true,
+        usePlaceholders = true,
+        analyses = { unusedparams = true },
+        ["ui.inlayhint.hints"] = {
+          compositeLiteralFields = true,
+          constantValues = true,
+          parameterNames = true,
+          rangeVariableTypes = true,
+        },
+      },
+    },
+  },
+  helm_ls = {
+    mason = "helm-ls",
+    cmd = { 'helm_ls', 'serve' },
+    filetypes = { 'helm' },
+    root_markers = { 'Chart.yaml' },
+    capabilities = { workspace = { didChangeWatchedFiles = { dynamicRegistration = true } } },
+    settings = {
+      ['helm-ls'] = {
+        valuesFiles = {
+          mainValuesFile = "values.yaml",
+          lintOverlayValuesFile = "values.lint.yaml",
+          additionalValuesFilesGlobPattern = "values*.yaml",
+        },
+        yamlls = {
+          path = "yaml-language-server",
+          enabled = false,
+          diagnosticsLimit = 50,
+          showDiagnosticsDirectly = false,
+          config = { schemas = { kubernetes = "templates/**" }, completion = true, hover = true },
+        },
+      },
+    },
+  },
+  yamlls = {
+    mason = "yaml-language-server",
+    cmd = { 'yaml-language-server', '--stdio' },
+    filetypes = { 'yaml', 'yaml.docker-compose', 'yaml.gitlab' },
+    root_markers = { '.git' },
+    settings = {
+      redhat = { telemetry = { enabled = false } },
+      yaml = {
+        schemas = {
+          ["https://json.schemastore.org/github-workflow.json"] = "/.github/workflows/*",
+          ["https://json.schemastore.org/github-action.json"] = "/action.yaml",
+        },
+      },
+    },
+  },
+  pylsp = {
+    mason = "python-lsp-server",
+    settings = { pylsp = { plugins = { pycodestyle = { enabled = true, maxLineLength = 500 } } } },
+  },
+}
+
+--- Make sure all abouve listed LSP configs are setup and the appropriate LSP
+--- binaries are installed through Mason.
+--- CAVEAT: updates need to be manually kicked-off through the Mason UI.
+local registry = require("mason-registry")
+for name, config in pairs(lsp_configs) do
+  local pkg_name = config.mason
+  if pkg_name then
+    local ok, pkg = pcall(registry.get_package, pkg_name)
+    if ok and not pkg:is_installed() then
+      pkg:install()
     end
+  end
 
-    client.config.settings.Lua = vim.tbl_deep_extend('force', client.config.settings.Lua, {
-      -- Make the server aware of Neovim runtime files
-      workspace = {
-        checkThirdParty = false,
-        library = {
-          vim.env.VIMRUNTIME
-        }
-      }
-    })
-  end,
-  settings = {
-    Lua = {
-      telemetry = {
-        enable = false,
-      },
-    },
-  },
-}
+  local lsp_config = vim.tbl_extend("force", config, { mason = nil })
+  if next(lsp_config) then
+    vim.lsp.config[name] = lsp_config
+  end
+  vim.lsp.enable(name)
+end
 
-vim.lsp.config.gopls = {
-  cmd = { "gopls" },
-  filetypes = { "go", "gotempl", "gowork", "gomod" },
-  root_markers = { ".git", "go.mod", "go.work", vim.uv.cwd() },
-  settings = {
-    gopls = {
-      semanticTokens = true,
-      completeUnimported = true,
-      usePlaceholders = true,
-      analyses = {
-        unusedparams = true,
-      },
-      ["ui.inlayhint.hints"] = {
-        compositeLiteralFields = true,
-        constantValues = true,
-        parameterNames = true,
-        rangeVariableTypes = true,
-      },
-    },
-  },
-}
-
-vim.lsp.config.helm_ls = {
-  cmd = { 'helm_ls', 'serve' },
-  filetypes = { 'helm' },
-  root_markers = { 'Chart.yaml' },
-  capabilities = {
-    workspace = {
-      didChangeWatchedFiles = {
-        dynamicRegistration = true,
-      },
-    },
-  },
-  settings = {
-    ['helm-ls'] = {
-      valuesFiles = {
-        mainValuesFile = "values.yaml",
-        lintOverlayValuesFile = "values.lint.yaml",
-        additionalValuesFilesGlobPattern = "values*.yaml"
-      },
-      yamlls = {
-        path = "yaml-language-server",
-        enabled = false,
-        diagnosticsLimit = 50,
-        showDiagnosticsDirectly = false,
-        config = {
-          schemas = {
-            kubernetes = "templates/**",
-          },
-          completion = true,
-          hover = true,
-          -- any other config from https://github.com/redhat-developer/yaml-language-server#language-server-settings
-        }
-      }
-    }
-  }
-}
-
-vim.lsp.config.yamlls = {
-  cmd = { 'yaml-language-server', '--stdio' },
-  filetypes = { 'yaml', 'yaml.docker-compose', 'yaml.gitlab' },
-  root_markers = { '.git' },
-  settings = {
-    -- https://github.com/redhat-developer/vscode-redhat-telemetry#how-to-disable-telemetry-reporting
-    redhat = { telemetry = { enabled = false } },
-    yaml = {
-      schemas = {
-        ["https://json.schemastore.org/github-workflow.json"] = "/.github/workflows/*",
-        ["https://json.schemastore.org/github-action.json"] = "/action.yaml"
-      },
-    },
-  }
-}
-vim.lsp.config.pylsp = {
-  settings = {
-    pylsp = {
-      plugins = {
-        pycodestyle = {
-          enabled = true,
-          maxLineLength = 500
-        }
-      }
-    }
-  }
-}
-
-vim.lsp.enable({
-  -- LSPs with default configuration
-  'tilt_ls',
-  'terraformls',
-  -- 'denols',
-  "ocamlls",
-  "clojure_lsp",
-  "dartls",
-  "bashls",
-  "vale_ls",
-  "sqls",
-  "elixirls",
-  "pylsp",
-  "ruff",
-  "ts_ls",
-  -- Fine-tuned lsps
-  "lua_ls",
-  "gopls",
-  "helm_ls",
-  "yamlls",
-})
-
--- Start, Stop, Restart, Log commands {{{
 vim.api.nvim_create_user_command("LspStart", function()
   vim.cmd.e()
 end, { desc = "Starts LSP clients in the current buffer" })
@@ -788,10 +642,9 @@ vim.api.nvim_create_user_command("LspStop", function(opts)
 end, {
   desc = "Stop all LSP clients or a specific client attached to the current buffer.",
   nargs = "?",
-  complete = function(_, _, _)
-    local clients = vim.lsp.get_clients({ bufnr = 0 })
+  complete = function()
     local client_names = {}
-    for _, client in ipairs(clients) do
+    for _, client in ipairs(vim.lsp.get_clients({ bufnr = 0 })) do
       table.insert(client_names, client.name)
     end
     return client_names
@@ -845,10 +698,5 @@ end, {
   desc = "Get all the information about all LSP attached",
 })
 
-vim.cmd([[colorscheme github_dark]])
-
--- vim.cmd([[
---   let ayucolor="mirage"
---   colorscheme ayu
--- ]])
+vim.cmd.colorscheme('github_dark')
 
