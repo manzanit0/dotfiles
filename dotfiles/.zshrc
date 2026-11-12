@@ -342,4 +342,16 @@ function settf() {
 }
 complete -F _tf settf
 
-alias claude="/Users/manzanit0/.claude/local/claude"
+# alias claude="/Users/manzanit0/.claude/local/claude"
+export PATH="/Users/manzanit0/.claude/local:$PATH"
+
+function k-az-from-pod() {
+kubectl get pod $1 -o jsonpath='{.spec.nodeName}' | xargs kubectl get node -o jsonpath='{.metadata.labels.topology\.kubernetes\.io/zone}'
+}
+
+alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
+
+alias vyq="nvim -c 'set ft=yaml' -"
+
+alias cagent=docker-agent
+

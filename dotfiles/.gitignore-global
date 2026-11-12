@@ -22,3 +22,6 @@ __MACOSX/*
 
 # aider.chat
 .aider*
+
+# https://docs.docker.com/ai/sandboxes/usage/
+.sbx
