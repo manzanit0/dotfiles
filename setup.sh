@@ -202,6 +202,17 @@ configure_shell_profile() {
   printf '\neval "%s(%s shellenv)"\n' "$" "$(brew_bin)" >> "$profile"
 }
 
+configure_rectangle() {
+  local src="$REPO_DIR/rectangle/RectangleConfig.json"
+  local dest="$HOME/Library/Application Support/Rectangle"
+  if defaults read com.knollsoft.Rectangle >/dev/null 2>&1; then
+    return 0
+  fi
+  log "Staging Rectangle config for its first launch"
+  run mkdir -p "$dest"
+  run cp "$src" "$dest/RectangleConfig.json"
+}
+
 apply_macos_defaults() {
   log "Applying macOS defaults"
   run defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
@@ -232,6 +243,7 @@ main() {
   install_oh_my_zsh
   link_dotfiles
   configure_shell_profile
+  configure_rectangle
   apply_macos_defaults
   print_next_steps
 }
