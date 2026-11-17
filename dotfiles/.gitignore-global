@@ -25,3 +25,5 @@ __MACOSX/*
 
 # https://docs.docker.com/ai/sandboxes/usage/
 .sbx
+
+**/.claude/settings.local.json
