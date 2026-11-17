@@ -5,7 +5,6 @@ set -euo pipefail
 REPO_URL="https://github.com/manzanit0/dotfiles.git"
 REPO_DIR="${DOTFILES_DIR:-$HOME/repositories/manzanit0/dotfiles}"
 OMZ_DIR="$HOME/.oh-my-zsh"
-TPM_DIR="$HOME/.tmux/plugins/tpm"
 SSH_KEY="$HOME/.ssh/id_ed25519"
 GPG_KEY_ID="108E89384907FB72"
 DRY_RUN="${DRY_RUN:-0}"
@@ -97,7 +96,8 @@ resolve_repo() {
 
 install_packages() {
   log "Installing Homebrew packages"
-  run brew bundle --file "$REPO_DIR/Brewfile"
+  run brew bundle --file "$REPO_DIR/Brewfile" \
+    || warn "some packages failed to install; re-run brew bundle."
 }
 
 link_file() {
@@ -141,13 +141,6 @@ install_oh_my_zsh() {
     "$OMZ_DIR/custom/plugins/evalcache"
 }
 
-install_tmux_plugins() {
-  log "Installing tmux plugins"
-  clone_if_missing https://github.com/tmux-plugins/tpm "$TPM_DIR"
-  run "$TPM_DIR/bin/install_plugins" \
-    || warn "tmux plugin install failed; press prefix + I inside tmux."
-}
-
 configure_shell_profile() {
   local profile="$HOME/.zprofile"
   if grep -qs 'brew shellenv' "$profile"; then
@@ -172,28 +165,13 @@ configure_gpg_agent() {
 
 apply_macos_defaults() {
   log "Applying macOS defaults"
-  run defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false
-  run defaults write NSGlobalDomain NSAutomaticDashSubstitutionEnabled -bool false
-  run defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool true
-  run defaults write NSGlobalDomain PMPrintingExpandedStateForPrint2 -bool true
-  run defaults write NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool false
   run defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
   run defaults write NSGlobalDomain AppleShowAllExtensions -bool true
-  run defaults write com.apple.print.PrintingPrefs "Quit When Finished" -bool true
-  run defaults write com.apple.finder ShowStatusBar -bool true
-  run defaults write com.apple.finder ShowPathbar -bool true
-  run defaults write com.apple.finder AppleShowAllFiles -bool true
+  run defaults write NSGlobalDomain KeyRepeat -int 2
+  run defaults write NSGlobalDomain InitialKeyRepeat -int 15
   run defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
-  run defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
-  run defaults write com.apple.finder WarnOnEmptyTrash -bool false
-  run defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
-  run defaults write com.apple.dock expose-animation-duration -float 0.1
-  run defaults write com.apple.dock tilesize -int 56
-  run defaults write com.apple.dock show-process-indicators -bool true
-  run defaults write com.apple.dock showhidden -bool true
   run defaults write com.apple.dock autohide -bool true
-  run defaults write com.apple.dock autohide-delay -float 0
-  run chflags nohidden "$HOME/Library"
+  run defaults write com.apple.dock tilesize -int 88
   run killall Dock Finder || true
 }
 
@@ -219,7 +197,6 @@ main() {
   resolve_repo
   install_packages
   install_oh_my_zsh
-  install_tmux_plugins
   link_dotfiles
   configure_shell_profile
   configure_gpg_agent

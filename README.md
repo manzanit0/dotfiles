@@ -14,7 +14,7 @@ Or, from a checkout: `./setup.sh`. It is safe to re-run.
 2. Installs Homebrew and everything in `Brewfile`.
 3. Clones this repo to `~/repositories/manzanit0/dotfiles`
    (override with `DOTFILES_DIR`).
-4. Installs oh-my-zsh, its custom plugins and the tmux plugins.
+4. Installs oh-my-zsh and its custom plugins.
 5. Symlinks every file under `dotfiles/` into `$HOME`, backing up
    whatever was there as `<file>.backup-<timestamp>`.
 6. Applies macOS defaults.
