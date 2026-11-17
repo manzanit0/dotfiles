@@ -19,7 +19,9 @@ Or, from a checkout: `./setup.sh`. It is safe to re-run.
 5. Installs oh-my-zsh and its custom plugins.
 6. Symlinks every file under `dotfiles/` into `$HOME`, backing up
    whatever was there as `<file>.backup-<timestamp>`.
-7. Applies macOS defaults.
+7. Stages the Rectangle config, which Rectangle imports on its first
+   launch. Skipped once Rectangle has preferences of its own.
+8. Applies macOS defaults.
 
 `DRY_RUN=1 ./setup.sh` prints the commands without running them.
 
