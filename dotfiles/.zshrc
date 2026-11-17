@@ -163,7 +163,7 @@ alias sz="source ~/.zshrc"
 # zprof
 
 # OCaml set up
-[[ ! -r /Users/manzanit0/.opam/opam-init/init.zsh ]] || source /Users/manzanit0/.opam/opam-init/init.zsh >/dev/null 2>/dev/null
+[[ ! -r $HOME/.opam/opam-init/init.zsh ]] || source $HOME/.opam/opam-init/init.zsh >/dev/null 2>/dev/null
 
 alias k="kubectl"
 alias d="docker"
@@ -180,9 +180,9 @@ eval "$(starship init zsh)"
 export PATH="/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home/bin:$PATH"
 
 # flutter sdk
-export PATH="$PATH:/Users/manzanit0/development/flutter/bin"
+export PATH="$PATH:$HOME/development/flutter/bin"
 
-export CDPATH=".:/Users/manzanit0/repositories/docker:/Users/manzanit0/repositories/manzanit0"
+export CDPATH=".:$HOME/repositories/docker:$HOME/repositories/manzanit0"
 
 # SYNOPSIS
 #   wf-run [branch]
@@ -289,7 +289,7 @@ function ghwf() {
 }
 
 # bun completions
-[ -s "/Users/manzanit0/.bun/_bun" ] && source "/Users/manzanit0/.bun/_bun"
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
 # bun
 export BUN_INSTALL="$HOME/.bun"
@@ -318,7 +318,7 @@ else
     start_agent;
 fi
 
-export PATH="/Users/manzanit0/.deno/bin:$PATH"
+export PATH="$HOME/.deno/bin:$PATH"
 
 export MANPAGER="nvim +Man\!"
 
@@ -342,8 +342,8 @@ function settf() {
 }
 complete -F _tf settf
 
-# alias claude="/Users/manzanit0/.claude/local/claude"
-export PATH="/Users/manzanit0/.claude/local:$PATH"
+# alias claude="$HOME/.claude/local/claude"
+export PATH="$HOME/.claude/local:$PATH"
 
 function k-az-from-pod() {
 kubectl get pod $1 -o jsonpath='{.spec.nodeName}' | xargs kubectl get node -o jsonpath='{.metadata.labels.topology\.kubernetes\.io/zone}'

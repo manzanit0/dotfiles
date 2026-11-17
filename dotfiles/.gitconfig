@@ -68,11 +68,6 @@ clean = git-lfs clean -- %f
 smudge = git-lfs smudge -- %f
 process = git-lfs filter-process
 required = true
-[safe]
-	directory = /private/var/folders/2c/qvljt5md5x7_qhdvsrvxv8cm0000gn/T/get-action-tests3367319973
-	directory = /private/var/folders/2c/qvljt5md5x7_qhdvsrvxv8cm0000gn/T/get-action-tests3367319973
-	directory = /private/var/folders/2c/qvljt5md5x7_qhdvsrvxv8cm0000gn/T/get-action-tests3367319973
-	directory = /private/var/folders/2c/qvljt5md5x7_qhdvsrvxv8cm0000gn/T/get-action-tests3367319973
 [credential "https://github.com"]
 	helper = 
 	helper = !/opt/homebrew/bin/gh auth git-credential
