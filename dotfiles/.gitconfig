@@ -16,7 +16,9 @@
 [user]
 	email = 10437518+manzanit0@users.noreply.github.com
 	name = Javier García
-	signingkey = 108E89384907FB72
+	signingkey = ~/.ssh/id_ed25519_github.pub
+[gpg]
+	format = ssh
 [commit]
 	gpgsign = true
 [tag]

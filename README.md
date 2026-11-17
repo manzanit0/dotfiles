@@ -12,17 +12,15 @@ Or, from a checkout: `./setup.sh`. It is safe to re-run.
 
 1. Generates an SSH key if there is none.
 2. Installs Homebrew and everything in `Brewfile`.
-3. Clones this repo to `~/repositories/manzanit0/dotfiles`
+3. Logs in to GitHub with `gh` (one browser confirmation) and uploads
+   the SSH key for both authentication and commit signing.
+4. Clones this repo to `~/repositories/manzanit0/dotfiles`
    (override with `DOTFILES_DIR`).
-4. Installs oh-my-zsh and its custom plugins.
-5. Symlinks every file under `dotfiles/` into `$HOME`, backing up
+5. Installs oh-my-zsh and its custom plugins.
+6. Symlinks every file under `dotfiles/` into `$HOME`, backing up
    whatever was there as `<file>.backup-<timestamp>`.
-6. Applies macOS defaults.
+7. Applies macOS defaults.
 
 `DRY_RUN=1 ./setup.sh` prints the commands without running them.
 
-## Manual steps afterwards
-
-- Add the SSH public key to GitHub.
-- Import the GPG signing key.
-- Launch `nvim` once to install plugins.
+Afterwards, launch `nvim` once to install plugins.

@@ -5,8 +5,8 @@ set -euo pipefail
 REPO_URL="https://github.com/manzanit0/dotfiles.git"
 REPO_DIR="${DOTFILES_DIR:-$HOME/repositories/manzanit0/dotfiles}"
 OMZ_DIR="$HOME/.oh-my-zsh"
-SSH_KEY="$HOME/.ssh/id_ed25519"
-GPG_KEY_ID="108E89384907FB72"
+SSH_KEY="$HOME/.ssh/id_ed25519_github"
+GITHUB_KEY_SCOPES="admin:public_key,admin:ssh_signing_key"
 DRY_RUN="${DRY_RUN:-0}"
 
 export GIT_CONFIG_GLOBAL=/dev/null
@@ -54,7 +54,7 @@ prime_sudo() {
 }
 
 ensure_ssh_key() {
-  if [[ -f "$SSH_KEY" || -f "$HOME/.ssh/id_rsa" ]]; then
+  if [[ -f "$SSH_KEY" ]]; then
     return 0
   fi
   log "Generating SSH key"
@@ -62,6 +62,57 @@ ensure_ssh_key() {
   run chmod 700 "$HOME/.ssh"
   run ssh-keygen -t ed25519 -f "$SSH_KEY" -C "$(whoami)@$(hostname -s)"
   run ssh-add --apple-use-keychain "$SSH_KEY"
+}
+
+configure_ssh_for_github() {
+  local conf="$HOME/.ssh/config"
+  if grep -qs '^Host github.com$' "$conf"; then
+    return 0
+  fi
+  log "Pointing SSH at $SSH_KEY for github.com"
+  [[ "$DRY_RUN" == "1" ]] && return 0
+  mkdir -p "$HOME/.ssh"
+  printf '\nHost github.com\n  AddKeysToAgent yes\n  UseKeychain yes\n' >> "$conf"
+  printf '  IdentityFile %s\n' "$SSH_KEY" >> "$conf"
+  chmod 600 "$conf"
+}
+
+github_can_manage_keys() {
+  gh api user/keys >/dev/null 2>&1 \
+    && gh api user/ssh_signing_keys >/dev/null 2>&1
+}
+
+authenticate_github() {
+  if github_can_manage_keys; then
+    return 0
+  fi
+  log "Authenticating with GitHub"
+  if gh auth token --hostname github.com >/dev/null 2>&1; then
+    run gh auth refresh --hostname github.com --scopes "$GITHUB_KEY_SCOPES"
+  else
+    run gh auth login --hostname github.com --git-protocol ssh --web \
+      --skip-ssh-key --scopes "$GITHUB_KEY_SCOPES"
+  fi
+}
+
+upload_ssh_key_as() {
+  local type="$1"
+  local endpoint="$2"
+  local key_body
+  key_body="$(awk '{print $2}' "$SSH_KEY.pub" 2>/dev/null || true)"
+  if [[ -n "$key_body" ]] \
+    && gh api "$endpoint" --jq '.[].key' 2>/dev/null | grep -qF "$key_body"; then
+    return 0
+  fi
+  run gh ssh-key add "$SSH_KEY.pub" --type "$type" --title "$(hostname -s)" \
+    || warn "could not upload the $type key; run gh ssh-key add manually."
+}
+
+upload_ssh_key() {
+  log "Uploading SSH key to GitHub"
+  authenticate_github || warn "GitHub authentication failed."
+  upload_ssh_key_as authentication user/keys
+  upload_ssh_key_as signing user/ssh_signing_keys
 }
 
 install_homebrew() {
@@ -151,18 +202,6 @@ configure_shell_profile() {
   printf '\neval "%s(%s shellenv)"\n' "$" "$(brew_bin)" >> "$profile"
 }
 
-configure_gpg_agent() {
-  local conf="$HOME/.gnupg/gpg-agent.conf"
-  if grep -qs 'pinentry-program' "$conf"; then
-    return 0
-  fi
-  log "Configuring gpg-agent pinentry"
-  [[ "$DRY_RUN" == "1" ]] && return 0
-  mkdir -p "$HOME/.gnupg"
-  chmod 700 "$HOME/.gnupg"
-  echo "pinentry-program $(brew --prefix)/bin/pinentry-mac" >> "$conf"
-}
-
 apply_macos_defaults() {
   log "Applying macOS defaults"
   run defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
@@ -176,30 +215,23 @@ apply_macos_defaults() {
 }
 
 print_next_steps() {
-  local pubkey="$SSH_KEY.pub"
-  [[ -f "$pubkey" ]] || pubkey="$HOME/.ssh/id_rsa.pub"
-  cat <<EOF
-
-All done. Manual steps left:
-  1. Add $pubkey to https://github.com/settings/keys
-     (git rewrites GitHub HTTPS URLs to SSH, so nvim plugins need it).
-  2. Import GPG key $GPG_KEY_ID; commits are signed with it.
-  3. Open a new terminal, then run nvim once to install plugins.
-  4. Log out and back in for all macOS defaults to apply.
-EOF
+  printf '\nAll done. Manual steps left:\n'
+  echo "  1. Open a new terminal, then run nvim once to install plugins."
+  echo "  2. Log out and back in for all macOS defaults to apply."
 }
 
 main() {
   require_macos
   prime_sudo
   ensure_ssh_key
+  configure_ssh_for_github
   install_homebrew
   resolve_repo
   install_packages
+  upload_ssh_key
   install_oh_my_zsh
   link_dotfiles
   configure_shell_profile
-  configure_gpg_agent
   apply_macos_defaults
   print_next_steps
 }
