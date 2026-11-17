@@ -205,10 +205,7 @@ configure_shell_profile() {
 configure_rectangle() {
   local src="$REPO_DIR/rectangle/RectangleConfig.json"
   local dest="$HOME/Library/Application Support/Rectangle"
-  if defaults read com.knollsoft.Rectangle >/dev/null 2>&1; then
-    return 0
-  fi
-  log "Staging Rectangle config for its first launch"
+  log "Staging Rectangle config for its next launch"
   run mkdir -p "$dest"
   run cp "$src" "$dest/RectangleConfig.json"
 }
