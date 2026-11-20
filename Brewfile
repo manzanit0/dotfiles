@@ -1,4 +1,5 @@
 tap 'fwdcloudsec/granted'
+tap 'docker/tap', trusted: true
 
 brew 'argocd'
 brew 'asdf'
@@ -39,3 +40,4 @@ cask 'rectangle'
 cask 'tailscale-app'
 cask 'telegram'
 cask 'whatsapp'
+cask 'docker/tap/sbx'
