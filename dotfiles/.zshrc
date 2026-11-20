@@ -5,7 +5,7 @@ export PATH=$HOME/bin:/usr/local/bin:$HOME/.local/bin:$PATH
 export ZSH="$HOME/.oh-my-zsh"
 export ZSH_THEME=robbyrussell
 
-plugins=(evalcache git macos github history-substring-search asdf)
+plugins=(evalcache git macos history-substring-search asdf)
 
 if type brew &>/dev/null; then
   FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
